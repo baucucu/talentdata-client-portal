@@ -7,14 +7,34 @@ import DataGrid, {
   FilterRow,
   Editing,
   Lookup,
+  Summary,
+  GroupItem,
 } from 'devextreme-react/data-grid';
 import CustomStore from 'devextreme/data/custom_store';
 import mongodb from '../../api/RealmClient';
+import client from '../../api/MongoClient';
 import { BSON } from 'realm-web';
+
+// // Function to connect to the server
+// async function run() {
+//   try {
+//     // Connect the client to the server
+//     await client.connect();
+//     console.log("connected client: ", client)
+//     // Establish and verify connection
+//     await client.db("candidates").command({ ping: 1 });
+//     console.log("Connected successfully to server");
+//   } finally {
+//     // Ensures that the client will close when you finish/error
+//     await client.close();
+//   }
+// }
+// run().catch(console.dir);
+
 
 export default () => (
   <React.Fragment>
-    <h2 className={'content-block'}>Tasks</h2>
+    <h2 className={'content-block'}>Candidates</h2>
 
     <DataGrid
       id="gridContainer"
@@ -23,7 +43,7 @@ export default () => (
       allowColumnReordering={true}
       hoverStateEnabled={true}
       selection={{ mode: 'single' }}
-      keyExpr="_id"
+      // keyExpr="_id"
       showBorders={false}
       focusedRowEnabled={true}
       onSelectionChanged={(values)=>{return console.log("focus row changed values: ", values)}}
@@ -31,6 +51,11 @@ export default () => (
       columnAutoWidth={true}
       columnHidingEnabled={true}
     >
+      <Summary>
+        <GroupItem
+            summaryType="count"
+        />
+      </Summary>
       <Paging defaultPageSize={10} />
       <Pager showPageSizeSelector={true} showInfo={true} />
       <FilterRow visible={true} />
@@ -76,8 +101,8 @@ const store = new CustomStore({
       return await coll.findOne({_id: BSON.ObjectId(id)})
   },
 
-  remove: async values => {
-    console.log("delete: ", values)
-    return await coll.deleteOne({_id: BSON.ObjectId(values)})
+  remove: async id => {
+    console.log("delete: ", id)
+    return await coll.deleteOne({_id: BSON.ObjectId(id)})
   }
 });
