@@ -5,8 +5,11 @@ import DataGrid, {
   Pager,
   Paging,
   FilterRow,
-  Lookup
+  Lookup,
 } from 'devextreme-react/data-grid';
+import CustomStore from 'devextreme/data/custom_store';
+import mongodb from '../../api/mongodb';
+
 
 export default () => (
   <React.Fragment>
@@ -14,7 +17,7 @@ export default () => (
 
     <DataGrid
       className={'dx-card wide-card'}
-      dataSource={dataSource}
+      dataSource={store}
       showBorders={false}
       focusedRowEnabled={true}
       defaultFocusedRowIndex={0}
@@ -25,7 +28,9 @@ export default () => (
       <Pager showPageSizeSelector={true} showInfo={true} />
       <FilterRow visible={true} />
 
-      <Column dataField={'Task_ID'} width={90} hidingPriority={2} />
+      <Column dataField={'Name'} hidingPriority={2} />
+
+      {/* <Column dataField={'Task_ID'} width={90} hidingPriority={2} />
       <Column
         dataField={'Task_Subject'}
         width={190}
@@ -76,29 +81,64 @@ export default () => (
         dataField={'Task_Completion'}
         caption={'Completion'}
         hidingPriority={0}
-      />
+      /> */}
     </DataGrid>
   </React.Fragment>
 );
 
-const dataSource = {
-  store: {
-    type: 'odata',
-    key: 'Task_ID',
-    url: 'https://js.devexpress.com/Demos/DevAV/odata/Tasks'
+// const dataSource = {
+//   store: {
+//     type: 'odata',
+//     key: 'Task_ID',
+//     url: 'https://js.devexpress.com/Demos/DevAV/odata/Tasks'
+//   },
+//   expand: 'ResponsibleEmployee',
+//   select: [
+//     'Task_ID',
+//     'Task_Subject',
+//     'Task_Start_Date',
+//     'Task_Due_Date',
+//     'Task_Status',
+//     'Task_Priority',
+//     'Task_Completion',
+//     'ResponsibleEmployee/Employee_Full_Name'
+//   ]
+// };
+
+const db = mongodb.db("candidates")
+const coll = db.collection("garrett_it")
+
+const store = new CustomStore({
+ 
+  load: async function() {
+    let records = await coll.find()
+    return records
   },
-  expand: 'ResponsibleEmployee',
-  select: [
-    'Task_ID',
-    'Task_Subject',
-    'Task_Start_Date',
-    'Task_Due_Date',
-    'Task_Status',
-    'Task_Priority',
-    'Task_Completion',
-    'ResponsibleEmployee/Employee_Full_Name'
-  ]
-};
+
+  // byKey: function(key) {
+  //     return $.getJSON(SERVICE_URL + "/" + encodeURIComponent(key));
+  // },
+
+  // insert: function(values) {
+  //     return $.post(SERVICE_URL, values);
+  // },
+
+  // update: function(key, values) {
+  //     return $.ajax({
+  //         url: SERVICE_URL + "/" + encodeURIComponent(key),
+  //         method: "PUT",
+  //         data: values
+  //     });
+  // },
+
+  // remove: function(key) {
+  //     return $.ajax({
+  //         url: SERVICE_URL + "/" + encodeURIComponent(key),
+  //         method: "DELETE",
+  //     });
+  // }
+
+});
 
 const priorities = [
   { name: 'High', value: 4 },
