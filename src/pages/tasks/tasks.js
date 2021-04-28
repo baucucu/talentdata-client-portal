@@ -5,144 +5,79 @@ import DataGrid, {
   Pager,
   Paging,
   FilterRow,
+  Editing,
   Lookup,
 } from 'devextreme-react/data-grid';
 import CustomStore from 'devextreme/data/custom_store';
-import mongodb from '../../api/mongodb';
-
+import mongodb from '../../api/RealmClient';
+import { BSON } from 'realm-web';
 
 export default () => (
   <React.Fragment>
     <h2 className={'content-block'}>Tasks</h2>
 
     <DataGrid
+      id="gridContainer"
       className={'dx-card wide-card'}
       dataSource={store}
+      allowColumnReordering={true}
+      hoverStateEnabled={true}
+      selection={{ mode: 'single' }}
+      keyExpr="_id"
       showBorders={false}
       focusedRowEnabled={true}
-      defaultFocusedRowIndex={0}
+      onSelectionChanged={(values)=>{return console.log("focus row changed values: ", values)}}
+      // defaultFocusedRowIndex={0}
       columnAutoWidth={true}
       columnHidingEnabled={true}
     >
       <Paging defaultPageSize={10} />
       <Pager showPageSizeSelector={true} showInfo={true} />
       <FilterRow visible={true} />
+      <Editing
+        mode="row"
+        allowUpdating={true}
+        allowDeleting={true}
+        allowAdding={true} />
 
-      <Column dataField={'Name'} hidingPriority={2} />
+      {/* <Column dataField={'_id'} caption={'ID'}/> */}
+      <Column dataField={'Name'} caption={'Name'} hidingPriority={2} />
+      <Column dataField={'Gender'} caption={'Gender'} hidingPriority={2} />
 
-      {/* <Column dataField={'Task_ID'} width={90} hidingPriority={2} />
-      <Column
-        dataField={'Task_Subject'}
-        width={190}
-        caption={'Subject'}
-        hidingPriority={8}
-      />
-      <Column
-        dataField={'Task_Status'}
-        caption={'Status'}
-        hidingPriority={6}
-      />
-      <Column
-        dataField={'Task_Priority'}
-        caption={'Priority'}
-        hidingPriority={5}
-      >
-        <Lookup
-          dataSource={priorities}
-          valueExpr={'value'}
-          displayExpr={'name'}
-        />
-      </Column>
-      <Column
-        dataField={'ResponsibleEmployee.Employee_Full_Name'}
-        caption={'Assigned To'}
-        allowSorting={false}
-        hidingPriority={7}
-      />
-      <Column
-        dataField={'Task_Start_Date'}
-        caption={'Start Date'}
-        dataType={'date'}
-        hidingPriority={3}
-      />
-      <Column
-        dataField={'Task_Due_Date'}
-        caption={'Due Date'}
-        dataType={'date'}
-        hidingPriority={4}
-      />
-      <Column
-        dataField={'Task_Priority'}
-        caption={'Priority'}
-        name={'Priority'}
-        hidingPriority={1}
-      />
-      <Column
-        dataField={'Task_Completion'}
-        caption={'Completion'}
-        hidingPriority={0}
-      /> */}
     </DataGrid>
   </React.Fragment>
 );
-
-// const dataSource = {
-//   store: {
-//     type: 'odata',
-//     key: 'Task_ID',
-//     url: 'https://js.devexpress.com/Demos/DevAV/odata/Tasks'
-//   },
-//   expand: 'ResponsibleEmployee',
-//   select: [
-//     'Task_ID',
-//     'Task_Subject',
-//     'Task_Start_Date',
-//     'Task_Due_Date',
-//     'Task_Status',
-//     'Task_Priority',
-//     'Task_Completion',
-//     'ResponsibleEmployee/Employee_Full_Name'
-//   ]
-// };
 
 const db = mongodb.db("candidates")
 const coll = db.collection("garrett_it")
 
 const store = new CustomStore({
+  key: '_id',
  
-  load: async function() {
-    let records = await coll.find()
+  load: async () => {
+    console.log('store: ', store)
+    let records = await coll.aggregate([{"$addFields":{"_id": {"$toString": "$_id"}}}])
+    console.log('records: ', records[0]._id)
     return records
   },
 
-  // byKey: function(key) {
-  //     return $.getJSON(SERVICE_URL + "/" + encodeURIComponent(key));
-  // },
+  insert: async values => {
+    return await coll.insertOne(values)
+  },
 
-  // insert: function(values) {
-  //     return $.post(SERVICE_URL, values);
-  // },
+  update: async (id,values) => {
+    let updateValues = values
+    delete updateValues._id
+    console.log("update values: ", values)
+    return await coll.updateOne({_id: BSON.ObjectId(id)},{$set: updateValues})
+  },
 
-  // update: function(key, values) {
-  //     return $.ajax({
-  //         url: SERVICE_URL + "/" + encodeURIComponent(key),
-  //         method: "PUT",
-  //         data: values
-  //     });
-  // },
+  byKey: async id => {
+      return await coll.findOne({_id: BSON.ObjectId(id)})
+  },
 
-  // remove: function(key) {
-  //     return $.ajax({
-  //         url: SERVICE_URL + "/" + encodeURIComponent(key),
-  //         method: "DELETE",
-  //     });
-  // }
-
+  remove: async values => {
+    console.log("delete: ", values)
+    return await coll.deleteOne({_id: BSON.ObjectId(values)})
+  }
 });
-
-const priorities = [
-  { name: 'High', value: 4 },
-  { name: 'Urgent', value: 3 },
-  { name: 'Normal', value: 2 },
-  { name: 'Low', value: 1 }
-];
